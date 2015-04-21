@@ -100,7 +100,14 @@ func SignV4URL(req *http.Request, auth Auth, regionName, svcName string, expires
 	queryVals.Set("X-Amz-Credential", auth.AccessKey+"/"+credScope)
 	queryVals.Set("X-Amz-Date", reqTime.Format(ISO8601BasicFormat))
 	queryVals.Set("X-Amz-Expires", fmt.Sprintf("%d", int(expires.Seconds())))
-	queryVals.Set("X-Amz-SignedHeaders", "host")
+	var signedHeaders bytes.Buffer
+	signedHeaders.WriteString("host")
+	for k := range req.Header {
+		signedHeaders.WriteRune(';')
+		signedHeaders.WriteString(strings.ToLower(k))
+	}
+	queryVals.Set("X-Amz-SignedHeaders", signedHeaders.String())
+
 	req.URL.RawQuery = queryVals.Encode()
 
 	_, canonReqHash, _, err := canonicalRequest(req, sha256Hasher, false)

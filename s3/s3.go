@@ -419,12 +419,23 @@ func (b *Bucket) URL(path string) string {
 	return b.ResolveS3BucketEndpoint(b.Name) + path
 }
 
+
 // SignedURL returns a URL which can be used to fetch objects without
 // signing for the given duration.
 func (b *Bucket) SignedURL(path string, expires time.Duration) (string, error) {
-	req, err := http.NewRequest("GET", b.URL(path), nil)
+	return b.SignedMethodURL(path, "GET", expires, nil)
+}
+
+// SignedMethodURL returns a URL which can be used to send custom http method with custom headers
+// signing for the given duration.
+func (b *Bucket) SignedMethodURL(path string, method string, expires time.Duration, header *http.Header) (string, error) {
+	req, err := http.NewRequest(method, b.URL(path), nil)
 	if err != nil {
 		return "", err
+	}
+
+	if(header != nil) {
+		req.Header = *header
 	}
 	req.Header.Add("date", time.Now().Format(aws.ISO8601BasicFormat))
 
